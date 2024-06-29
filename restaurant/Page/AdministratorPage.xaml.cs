@@ -66,9 +66,9 @@ namespace restaurant.Page
             using (SqlConnection connection = new SqlConnection($"Server={server};Database={database};User ID={username};Password={passwordDB}"))
             {
                 connection.Open();
-                string sql = "SELECT m.Id_Product, m.NameProduct, m.Price, m.Type, m.Info, o.DataAdd, o.Status, o.Login " +
+                string sql = "SELECT o.Id_Orders, o.DataAdd, o.Status, o.Login, m.NameProduct, m.Type, m.Price, m.Info " +
                               "FROM Orders o " +
-                              "JOIN Menu m ON o.Id_Orders = m.Id_Product";
+                              "JOIN Menu m ON o.Menu_Id_Product = m.Id_Product";
 
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
@@ -78,7 +78,7 @@ namespace restaurant.Page
                         {
                             application app = new application
                             {
-                               // Id_Product = reader["Id_Product"].ToString(),
+                                ID_Orders = (int)reader["ID_Orders"],
                                 ProductName = reader["NameProduct"].ToString(),
                                 Type = reader["Type"].ToString(),
                                 Price = reader["Price"].ToString(),
@@ -96,14 +96,23 @@ namespace restaurant.Page
         }
         private void podkl()
         {
-            TowarList.Clear(); // Очищаем список перед заполнением
+            TowarList.Clear(); 
 
             using (SqlConnection connection = new SqlConnection($"Server={server};Database={database};User ID={username};Password={passwordDB}"))
             {
                 connection.Open();
 
                 string sql1 = "SELECT * FROM Menu";
+                DataTemplate imageTemplate = new DataTemplate();
+                FrameworkElementFactory imageFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Image));
+                imageFactory.SetBinding(System.Windows.Controls.Image.SourceProperty, new Binding("Image"));
+                imageFactory.SetValue(System.Windows.Controls.Image.WidthProperty, 70.0);
+                imageFactory.SetValue(System.Windows.Controls.Image.HeightProperty, 60.0);
+                imageFactory.SetValue(System.Windows.Controls.Image.StretchProperty, Stretch.UniformToFill);
+                imageTemplate.VisualTree = imageFactory;
 
+                
+                gridView.Columns[3].CellTemplate = imageTemplate;
                 using (SqlCommand command = new SqlCommand(sql1, connection))
                 {
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -129,7 +138,7 @@ namespace restaurant.Page
                                     bitmap.CacheOption = BitmapCacheOption.OnLoad;
                                     bitmap.StreamSource = stream;
                                     bitmap.EndInit();
-                                    bitmap.Freeze(); // Это необходимо для использования BitmapImage в другом потоке
+                                    bitmap.Freeze(); 
 
                                     app.Image = bitmap;
                                 }
@@ -153,7 +162,7 @@ namespace restaurant.Page
 
         public void ExportToExcel(object sender, RoutedEventArgs e)
         {
-            //// Создание нового Excel-файла
+           
             using (var workbook = new XLWorkbook())
             {
                 var worksheet = workbook.Worksheets.Add("Orders");
@@ -201,7 +210,6 @@ namespace restaurant.Page
             //}
             //else
             //{
-            //    // Обработка случая, когда выбранный элемент не существует
             //    MessageBox.Show("Выберите элемент для редактирования.", "Ошибка", MessageBoxButton.OK, MessageBoxImage.Error);
             //}
         }
@@ -213,7 +221,7 @@ namespace restaurant.Page
 
                 if (MessageBox.Show("Вы уверены, что хотите удалить эту запись?", "Подтверждение удаления", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
                 {
-                    // Удаляем запись из базы данных и из списка
+                    
                     RemoveApplication(selectedApplication);
                 }
             }
@@ -244,8 +252,6 @@ namespace restaurant.Page
 
 
             TowarList.Remove(app);
-
-            // Обновляем источник данных для обновления списка в интерфейсе
             TowarListView.ItemsSource = null;
             TowarListView.ItemsSource = TowarList;
         }
@@ -274,7 +280,7 @@ namespace restaurant.Page
 
         private async void ComboBoxStatus(object sender, SelectionChangedEventArgs e)
         {
-            await Task.Delay(500);
+            await Task.Delay(30);
             string selectedStatus = comboBoxStatus.Text;
 
 
@@ -288,21 +294,17 @@ namespace restaurant.Page
                 TowarListView.Items.Refresh();
             }
         }
-        private void UpdateStatusInDatabase(application selectedApplication, string Selectionstatus)
+        private void UpdateStatusInDatabase(application selectedApplication, string newStatus)
         {
-            string newStatus = Selectionstatus;
-
             using (SqlConnection connection = new SqlConnection($"Server={server};Database={database};User ID={username};Password={passwordDB}"))
             {
                 connection.Open();
 
-                string sql = "UPDATE Orders SET Status = @Status WHERE DataAdd = @DataAdd";
+                string sql = "UPDATE Orders SET Status = @Status WHERE ID_Orders = @ID_Orders";
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@Status", newStatus);
-                    command.Parameters.AddWithValue("@DataAdd", selectedApplication.DateAdd);
-                    // command.Parameters.AddWithValue("@NameClient", selectedApplication.UsersFIO);
-
+                    command.Parameters.AddWithValue("@ID_Orders", selectedApplication.ID_Orders);
                     command.ExecuteNonQuery();
                 }
             }
@@ -343,7 +345,7 @@ namespace restaurant.Page
         }
         public class application
         {
-            
+            public int ID_Orders { get; set; }
             public string DateAdd { get; set; }
             public string ProductName { get; set; }
             public string Price { get; set; }
@@ -356,17 +358,17 @@ namespace restaurant.Page
         }
 
 
-        private async void Menu(object sender, RoutedEventArgs e)
+        private void Menu(object sender, RoutedEventArgs e)
         {
             podkl();
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            //await Task.Delay(TimeSpan.FromSeconds(1));
             ResetGridToXaml();
         }
 
-        private async void Order(object sender, RoutedEventArgs e)
+        private  void Order(object sender, RoutedEventArgs e)
         {
             podkl1();
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            //await Task.Delay(TimeSpan.FromSeconds(1));
             UpdateGridOrder();
         }
         private void UpdateGridOrder()
@@ -379,6 +381,7 @@ namespace restaurant.Page
             gridView.Columns[4].Header = "Информация";
             gridView.Columns[5].Header = "Статус";
             gridView.Columns[6].Header = "Логин";
+            //View.Columns[7].Header = "";
 
             gridView.Columns[0].DisplayMemberBinding = new Binding("DateAdd");
             gridView.Columns[1].DisplayMemberBinding = new Binding("ProductName");
@@ -395,20 +398,34 @@ namespace restaurant.Page
             gridView.Columns[0].Header = "Название";
             gridView.Columns[1].Header = "Цена";
             gridView.Columns[2].Header = "Тип";
-            gridView.Columns[2].Header = "Изображение";
+            gridView.Columns[3].Header = "Изображение";
 
-            gridView.Columns[4].Header = "";
+            gridView.Columns[4].Header = "Информация";
             gridView.Columns[5].Header = "";
-            gridView.Columns[5].Header = "";
+            gridView.Columns[6].Header = "";
+            
 
             gridView.Columns[0].DisplayMemberBinding = new Binding("ProductName");
             gridView.Columns[1].DisplayMemberBinding = new Binding("Price");
             gridView.Columns[2].DisplayMemberBinding = new Binding("Type");
-            gridView.Columns[3].DisplayMemberBinding = new Binding("Image");
+            gridView.Columns[3].DisplayMemberBinding = null;
+            gridView.Columns[4].DisplayMemberBinding = null;
+            gridView.Columns[4].Width=200;
+            podkl();
+            gridView.Columns[5].DisplayMemberBinding = new Binding("Void");
+            gridView.Columns[6].DisplayMemberBinding = new Binding("Void");
+            DataTemplate textTemplate = new DataTemplate();
+            FrameworkElementFactory textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
+            textBlockFactory.SetBinding(TextBlock.TextProperty, new Binding("Info"));
+            textBlockFactory.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            textTemplate.VisualTree = textBlockFactory;
 
-            gridView.Columns[4].DisplayMemberBinding = new Binding("");
-            gridView.Columns[5].DisplayMemberBinding = new Binding("");
-            gridView.Columns[6].DisplayMemberBinding = new Binding("");
+            gridView.Columns[4].CellTemplate = textTemplate;
+            //gridView.Columns[7].DisplayMemberBinding = new Binding("Void");
+            //gridView.Columns[8].DisplayMemberBinding = new Binding("Void");
+            //gridView.Columns[9].DisplayMemberBinding = new Binding("Void");
+
+
 
         }
         private void Exit(object sender, RoutedEventArgs e)

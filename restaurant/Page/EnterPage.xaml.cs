@@ -76,6 +76,7 @@ namespace restaurant.Page
 
                                 if (roleClient == "2")
                                 {
+                                    
                                     Registration.loginUser = email.Text;
                                     NavigationService.Navigate(new AdministratorPage());
                                 }

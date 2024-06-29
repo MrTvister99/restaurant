@@ -280,7 +280,7 @@
                     </GridViewColumn>
                     <GridViewColumn Width="90" DisplayMemberBinding="{Binding Void}" ></GridViewColumn>
                     <GridViewColumn Width="120" DisplayMemberBinding="{Binding Void}" ></GridViewColumn>
-                    <GridViewColumn DisplayMemberBinding="{Binding Void}" ></GridViewColumn>
+                   
                 </GridView>
             </ListView.View>
         </ListView>

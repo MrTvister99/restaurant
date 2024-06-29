@@ -43,7 +43,15 @@ namespace restaurant.Page
                 connection.Open();
 
                 string sql1 = "SELECT * FROM Menu";
+                DataTemplate imageTemplate = new DataTemplate();
+                FrameworkElementFactory imageFactory = new FrameworkElementFactory(typeof(System.Windows.Controls.Image));
+                imageFactory.SetBinding(System.Windows.Controls.Image.SourceProperty, new Binding("Image"));
+                imageFactory.SetValue(System.Windows.Controls.Image.WidthProperty, 70.0);
+                imageFactory.SetValue(System.Windows.Controls.Image.HeightProperty, 60.0);
+                imageFactory.SetValue(System.Windows.Controls.Image.StretchProperty, Stretch.UniformToFill);
+                imageTemplate.VisualTree = imageFactory;
 
+                gridView.Columns[3].CellTemplate = imageTemplate;
                 using (SqlCommand command = new SqlCommand(sql1, connection))
                 {
                     using (SqlDataReader reader = command.ExecuteReader())
@@ -52,6 +60,7 @@ namespace restaurant.Page
                         {
                             application app = new application
                             {
+                                Menu_ID_Product= (int)reader["Id_Product"],
                                 Id_Product = reader["Id_Product"].ToString(),
                                 ProductName = reader["NameProduct"].ToString(),
                                 Type = reader["Type"].ToString(),
@@ -237,6 +246,8 @@ namespace restaurant.Page
         }
         public class application
         {
+            public int Menu_ID_Product { get; set; }
+            public int ID_Orders { get; set; }
             public string Id_Product { get; set; }
             public string DateAdd { get; set; }
             public string ProductName { get; set; }
@@ -250,10 +261,9 @@ namespace restaurant.Page
         }
 
 
-        private async void Menu(object sender, RoutedEventArgs e)
+        private void Menu(object sender, RoutedEventArgs e)
         {
             podkl();
-            await Task.Delay(TimeSpan.FromSeconds(1));
             ResetGridToXaml();
         }
         private void podkl1()
@@ -262,9 +272,9 @@ namespace restaurant.Page
             using (SqlConnection connection = new SqlConnection($"Server={server};Database={database};User ID={username};Password={passwordDB}"))
             {
                 connection.Open();
-                string sql = "SELECT m.Id_Product, m.NameProduct, m.Price, m.Type, m.Info, o.DataAdd, o.Status " +
+                string sql = "SELECT o.Id_Orders, o.DataAdd, o.Status, o.Login, m.NameProduct, m.Type, m.Price, m.Info " +
                               "FROM Orders o " +
-                              "JOIN Menu m ON o.Id_Orders = m.Id_Product"; 
+                              "JOIN Menu m ON o.Menu_Id_Product = m.Id_Product";
 
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
@@ -274,14 +284,16 @@ namespace restaurant.Page
                         {
                             application app = new application
                             {
-                                Id_Product = reader["Id_Product"].ToString(),
+                                ID_Orders = (int)reader["ID_Orders"],
                                 ProductName = reader["NameProduct"].ToString(),
                                 Type = reader["Type"].ToString(),
                                 Price = reader["Price"].ToString(),
                                 Info = reader["Info"].ToString(),
+                                Login = reader["Login"].ToString(),
                                 DateAdd = reader["DataAdd"].ToString(),
                                 Status = reader["Status"].ToString()
                             };
+                            if(app.Login== Registration.loginUser)
                             TowarList.Add(app);
                         }
                     }
@@ -289,7 +301,7 @@ namespace restaurant.Page
             }
             TowarListView.ItemsSource = TowarList;
         }
-    
+
 
         private void Add(object sender, RoutedEventArgs e)
         {
@@ -301,51 +313,85 @@ namespace restaurant.Page
             NavigationService.Navigate(new EnterPage());
         }
 
-        private async void Order(object sender, RoutedEventArgs e)
+        private void Order(object sender, RoutedEventArgs e)
         {
             podkl1();
-            await Task.Delay(TimeSpan.FromSeconds(1));
+
             UpdateGridOrder();
         }
         private void UpdateGridOrder()
         {
 
+
             gridView.Columns[0].Header = "Дата заказа";
+            gridView.Columns[0].Width = 130;
             gridView.Columns[1].Header = "Название";
+            gridView.Columns[1].Width = 130;
             gridView.Columns[2].Header = "Цена";
             gridView.Columns[3].Header = "Тип";
             gridView.Columns[4].Header = "Информация";
             gridView.Columns[5].Header = "Статус";
 
+            //View.Columns[7].Header = "";
+
             gridView.Columns[0].DisplayMemberBinding = new Binding("DateAdd");
             gridView.Columns[1].DisplayMemberBinding = new Binding("ProductName");
             gridView.Columns[2].DisplayMemberBinding = new Binding("Price");
             gridView.Columns[3].DisplayMemberBinding = new Binding("Type");
-            gridView.Columns[4].DisplayMemberBinding = new Binding("Info");
+            gridView.Columns[4].DisplayMemberBinding = null;
+            gridView.Columns[4].Width = 200;
+
             gridView.Columns[5].DisplayMemberBinding = new Binding("Status");
-            gridView.Columns[6].DisplayMemberBinding = new Binding("Login");
+
+            DataTemplate textTemplate = new DataTemplate();
+            FrameworkElementFactory textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
+            textBlockFactory.SetBinding(TextBlock.TextProperty, new Binding("Info"));
+            textBlockFactory.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            textTemplate.VisualTree = textBlockFactory;
+
+            gridView.Columns[4].CellTemplate = textTemplate;
         }
 
 
         private void ResetGridToXaml()
         {
             gridView.Columns[0].Header = "Название";
+            gridView.Columns[3].Width = 130;
             gridView.Columns[1].Header = "Цена";
             gridView.Columns[2].Header = "Тип";
-            gridView.Columns[2].Header = "Изображение";
+            gridView.Columns[3].Header = "Изображение";
 
-            gridView.Columns[4].Header = "";
+            gridView.Columns[4].Header = "Информация";
+
             gridView.Columns[5].Header = "";
-            gridView.Columns[5].Header = "";
+            gridView.Columns[6].Header = "";
+
 
             gridView.Columns[0].DisplayMemberBinding = new Binding("ProductName");
             gridView.Columns[1].DisplayMemberBinding = new Binding("Price");
             gridView.Columns[2].DisplayMemberBinding = new Binding("Type");
-            gridView.Columns[3].DisplayMemberBinding = new Binding("Image");
+            gridView.Columns[3].DisplayMemberBinding = null;
+            gridView.Columns[4].DisplayMemberBinding = null ;
+            podkl();
+            gridView.Columns[5].DisplayMemberBinding = null;
+            gridView.Columns[6].DisplayMemberBinding = new Binding("Void");
+            //gridView.Columns[7].DisplayMemberBinding = new Binding("Void");
+            //gridView.Columns[8].DisplayMemberBinding = new Binding("Void");
+            //gridView.Columns[9].DisplayMemberBinding = new Binding("Void");
+            DataTemplate buttonTemplate = new DataTemplate();
+            FrameworkElementFactory buttonFactory = new FrameworkElementFactory(typeof(Button));
+            buttonFactory.SetValue(Button.ContentProperty, "Купить");
+            buttonFactory.SetValue(Button.BackgroundProperty, Brushes.LightGreen);
+            buttonFactory.AddHandler(Button.ClickEvent, new RoutedEventHandler(Button_Buy));
+            buttonTemplate.VisualTree = buttonFactory;
+            DataTemplate textTemplate = new DataTemplate();
+            FrameworkElementFactory textBlockFactory = new FrameworkElementFactory(typeof(TextBlock));
+            textBlockFactory.SetBinding(TextBlock.TextProperty, new Binding("Info"));
+            textBlockFactory.SetValue(TextBlock.TextWrappingProperty, TextWrapping.Wrap);
+            textTemplate.VisualTree = textBlockFactory;
+            gridView.Columns[5].CellTemplate = buttonTemplate;
+            gridView.Columns[4].CellTemplate = textTemplate;
 
-            gridView.Columns[4].DisplayMemberBinding = new Binding("");
-            gridView.Columns[5].DisplayMemberBinding = new Binding("");
-            gridView.Columns[6].DisplayMemberBinding = new Binding("");
 
         }
 
@@ -353,8 +399,6 @@ namespace restaurant.Page
         {
             Button button = (Button)sender;
             DependencyObject parent = button;
-
-            // Идем вверх по иерархии до ListViewItem
             while (parent != null && !(parent is ListViewItem))
             {
                 parent = VisualTreeHelper.GetParent(parent);
@@ -362,51 +406,51 @@ namespace restaurant.Page
 
             if (parent is ListViewItem listViewItem)
             {
-                // Получаем объект application из данных элемента ListView
                 application data = (application)listViewItem.Content;
 
-                // Проверяем, что data действительно является объектом типа application
                 if (data != null)
                 {
-                    // Получаем текущую дату
                     DateTime currentDate = DateTime.Now;
-
-                    // Получаем Login пользователя, который делает заказ
-                    string userLogin = Registration.loginUser; // Замените на фактический Login пользователя
-
-                    // Открываем соединение с базой данных
+                    string userLogin = Registration.loginUser;
                     using (SqlConnection connection = new SqlConnection($"Server={server};Database={database};User ID={username};Password={passwordDB}"))
                     {
                         connection.Open();
 
-                        // Формируем SQL запрос для вставки данных в таблицу Orders
-                        string sql = "INSERT INTO Orders (DataAdd, Status, Product, Login,Quantity) VALUES (@DataAdd, @Status, @Product, @Login,@Quantity)";
-
-                        using (SqlCommand command = new SqlCommand(sql, connection))
+                        string getNameProductSql = "SELECT NameProduct FROM Menu WHERE Id_Product = @Menu_ID_Product";
+                        using (SqlCommand getNameProductCommand = new SqlCommand(getNameProductSql, connection))
                         {
-                            // Добавляем параметры для SQL запроса
-                            command.Parameters.AddWithValue("@DataAdd", currentDate);
-                            command.Parameters.AddWithValue("@Status", "новый");
-                            command.Parameters.AddWithValue("@Product", data.ProductName); 
-                            command.Parameters.AddWithValue("@Login", userLogin);
-                            command.Parameters.AddWithValue("@Quantity", 1);
+                            //getNameProductCommand.Parameters.AddWithValue("@Menu_ID_Product", data.Menu_ID_Product);
+                            //string productName = getNameProductCommand.ExecuteScalar() as string;
 
-                            // Выполняем запрос
-                            command.ExecuteNonQuery();
+                            
+                                string sql = "INSERT INTO Orders (DataAdd, Status,Menu_ID_Product, Login, Quantity) VALUES (@DataAdd, @Status,@Menu_ID_Product, @Login, @Quantity)";
+
+                                using (SqlCommand command = new SqlCommand(sql, connection))
+                                {
+                                    command.Parameters.AddWithValue("@DataAdd", currentDate);
+                                    command.Parameters.AddWithValue("@Status", "новый");
+                                    command.Parameters.AddWithValue("@Menu_ID_Product", data.Menu_ID_Product);
+                                    command.Parameters.AddWithValue("@Login", userLogin);
+                                    command.Parameters.AddWithValue("@Quantity", 1);
+                                    command.ExecuteNonQuery();
+                                }
+                            
+                          
                         }
                     }
                 }
                 else
                 {
-                    // Обработка ошибки, если item.Content не содержит объект типа application
                     Console.WriteLine("Ошибка: item.Content не содержит объект типа application");
                 }
             }
             else
             {
-                // Обработка ошибки, если не удалось найти ListViewItem
                 Console.WriteLine("Ошибка: не удалось найти ListViewItem");
             }
         }
     }
 }
+
+
+

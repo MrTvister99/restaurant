@@ -52,7 +52,7 @@ namespace restaurant.Page
                 login = email.Text;
                 password = Password.Password.ToString();
                 connection.Open();
-                string sql = $"INSERT INTO clients (Login,password,Role_client)  VALUES (@Login,@password,@Role_client)";
+                string sql = $"INSERT INTO clients (Login,password,User_IDRole)  VALUES (@Login,@password,@User_IDRole)";
                 if (Password.Password.ToString() != "" && email.Text != "")
                 {
                     if (!(password.Length < 6) && Regex.IsMatch(password, "[A-Z]") && Regex.IsMatch(password, "[0-9]") && Regex.IsMatch(password, "[!@#$%^]"))
@@ -60,11 +60,11 @@ namespace restaurant.Page
                         using (SqlCommand command = new SqlCommand(sql, connection))
                         {
                             loginUser = email.Text;
-                            command.Parameters.AddWithValue("@email", $"{login}");
+                            command.Parameters.AddWithValue("@Login", $"{login}");
 
                             command.Parameters.AddWithValue("@password", $"{password}");
 
-                            command.Parameters.AddWithValue("@Role_client", $"1");
+                            command.Parameters.AddWithValue("@User_IDRole", 1);
                             login = email.Text;
                             NavigationService.Navigate(new ClientPage());
 
